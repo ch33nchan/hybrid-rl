@@ -1,0 +1,8 @@
+{
+  "episode": 8,
+  "success": true,
+  "steps": 80,
+  "seed": 131,
+  "timestamp": "2025-10-04T01:18:51.944940Z",
+  "instruction": "lift the red cube (lift-only bootstrap)"
+}

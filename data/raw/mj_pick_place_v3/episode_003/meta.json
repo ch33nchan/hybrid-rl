@@ -1,0 +1,8 @@
+{
+  "episode": 3,
+  "success": false,
+  "steps": 120,
+  "seed": 45,
+  "timestamp": "2025-10-04T01:03:35.428511Z",
+  "instruction": "pick and place the red cube onto the green target (v3 FSM no-release)"
+}

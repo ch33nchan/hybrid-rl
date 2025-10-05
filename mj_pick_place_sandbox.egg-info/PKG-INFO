@@ -1,0 +1,15 @@
+Metadata-Version: 2.4
+Name: mj-pick-place-sandbox
+Version: 0.0.1
+Summary: MuJoCo pick-place offline dataset + BC baseline
+Author: Your Name
+Requires-Python: >=3.11
+Requires-Dist: mujoco==3.1.6
+Requires-Dist: gymnasium==0.29.1
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: torch==2.3.1
+Requires-Dist: tqdm>=4.66.0
+Requires-Dist: opencv-python>=4.9.0
+Requires-Dist: Pillow>=10.0.0
+Requires-Dist: pydantic>=2.6.0
+Requires-Dist: huggingface-hub>=0.22.0

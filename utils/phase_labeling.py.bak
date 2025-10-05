@@ -1,0 +1,57 @@
+import numpy as np
+
+# Phase indices
+PHASES = {
+    "APPROACH": 0,
+    "DESCEND": 1,
+    "GRASP_SETTLE": 2,
+    "LIFT": 3,
+    "MOVE": 4,
+    "FINE": 5,
+}
+
+def label_phase(state,
+                attach_dist_thresh: float = 0.025,
+                descend_height_margin: float = 0.02,
+                lift_height: float = 0.17,
+                fine_radius: float = 0.03):
+    """
+    state layout:
+      eef_xyz(0:3), gripper(3), cube_xyz(4:7), target_xy(7:9)
+    """
+    eef = state[0:3]
+    grip = state[3]
+    cube = state[4:7]
+    tgt = state[7:9]
+
+    dist_eef_cube = np.linalg.norm(eef - cube)
+    attached = (grip > 0.5) and (dist_eef_cube < attach_dist_thresh)
+
+    # If not attached yet
+    if not attached:
+        horiz_err = np.linalg.norm(eef[:2] - cube[:2])
+        vertical_gap = eef[2] - cube[2]
+        if grip < 0.5:
+            # Open gripper phases
+            if horiz_err > 0.02:
+                return PHASES["APPROACH"]
+            # horizontally near
+            if vertical_gap > descend_height_margin:
+                return PHASES["APPROACH"]
+            else:
+                return PHASES["DESCEND"]
+        else:
+            # Closed but not attached: still descending / settling
+            if vertical_gap > descend_height_margin:
+                return PHASES["DESCEND"]
+            return PHASES["GRASP_SETTLE"]
+    else:
+        # Attached phases
+        if eef[2] < lift_height:
+            return PHASES["LIFT"]
+        # Above target vs alignment
+        dist_target = np.linalg.norm(eef[:2] - tgt)
+        if dist_target > fine_radius:
+            return PHASES["MOVE"]
+        else:
+            return PHASES["FINE"]

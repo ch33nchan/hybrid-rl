@@ -1,0 +1,15 @@
+env:
+  name: mj_pick_place_v0
+  max_steps: 120
+  seed: 42
+  render:
+    width: 128
+    height: 128
+data:
+  root: data/raw/mj_pick_place_v0
+model:
+  policy: simple_bc
+training:
+  batch_size: 64
+  lr: 3e-4
+  epochs: 5

@@ -1,0 +1,117 @@
+import argparse, json, cv2, numpy as np
+from pathlib import Path
+from datetime import datetime
+from tqdm import trange
+from envs.mj_pick_place_env import MjPickPlaceEnv, MjPickPlaceConfig
+
+def descend_grasp_sequence(env, steps=50):
+    obs = env.reset()
+    frames=[obs["rgb"]]; states=[obs["state"]]; actions=[]; dones=[]; success=False
+    s = obs["state"]; eef=s[0:3]; cube=s[4:7]
+    # Move above cube center
+    for t in range(steps):
+        s = obs["state"]; eef=s[0:3]; cube=s[4:7]
+        horiz = cube[:2] - eef[:2]
+        act_xy = np.clip(horiz*40.0, -1,1)
+        dz = ( (cube[2]+0.012) - eef[2]) * 40.0
+        if t < 10:
+            g = 0.0
+        else:
+            g = 1.0
+        a = np.array([act_xy[0], act_xy[1], np.clip(dz,-1,1), g], dtype=np.float32)
+        obs,r,d,info = env.step(a)
+        actions.append(a); frames.append(obs["rgb"]); states.append(obs["state"]); dones.append(d)
+        if d: success=info["success"]; break
+    return frames, states, actions, dones, success
+
+def fine_align_sequence(env, steps=60):
+    # Start at environment, quickly attach & lift then wander near target with small oscillations to populate MOVE/FINE
+    obs = env.reset()
+    frames=[obs["rgb"]]; states=[obs["state"]]; actions=[]; dones=[]; success=False
+    for t in range(steps):
+        s = obs["state"]
+        eef=s[0:3]; gripper=s[3]; cube=s[4:7]; tgt=s[7:9]
+        attached = (gripper>0.5 and np.linalg.norm(eef-cube)<0.05) or np.linalg.norm(eef-cube)<0.02
+        # Sequence: approach -> descend-> close -> lift -> micro align jitter
+        if not attached:
+            target = np.array([cube[0], cube[1], 0.18])
+            if t > 12:
+                target = np.array([cube[0], cube[1], cube[2]+0.012])
+            if t > 24:
+                # close
+                target = np.array([cube[0], cube[1], cube[2]+0.012])
+            g = 1.0 if t>22 else 0.0
+        else:
+            # hover above target with small jitter to create MOVE+FINE phases
+            base = np.array([tgt[0], tgt[1], 0.19])
+            jitter = 0.005 * np.array([np.sin(t*0.3), np.cos(t*0.25), 0])
+            target = base + jitter
+            g = 1.0
+        err = target - eef
+        a = np.array([
+            np.clip(err[0]*25,-1,1),
+            np.clip(err[1]*25,-1,1),
+            np.clip(err[2]*25,-1,1),
+            g
+        ], dtype=np.float32)
+        obs,r,d,info = env.step(a)
+        actions.append(a); frames.append(obs["rgb"]); states.append(obs["state"]); dones.append(d)
+        if d: success=info["success"]; break
+    return frames, states, actions, dones, success
+
+def collect(descend_n, fine_n, out_dir, seed):
+    root = Path(out_dir); root.mkdir(parents=True, exist_ok=True)
+    env_desc = MjPickPlaceEnv(MjPickPlaceConfig(seed=seed, lift_only=False))
+    env_fine = MjPickPlaceEnv(MjPickPlaceConfig(seed=seed+100, lift_only=False))
+    ep_counter=0
+    # Descend/Grasp boosters
+    for i in trange(descend_n, desc="Booster DESCEND_GRASP"):
+        frames, states, actions, dones, success = descend_grasp_sequence(env_desc)
+        ep_dir = root / f"episode_desc_{i:03d}"
+        ep_dir.mkdir(exist_ok=True)
+        np.savez_compressed(ep_dir/"trajectory.npz",
+            obs_rgb=np.stack(frames).astype(np.uint8),
+            obs_state=np.stack(states).astype(np.float32),
+            actions=np.stack(actions).astype(np.float32),
+            dones=np.array(dones,dtype=bool),
+            success=np.array([success],dtype=bool)
+        )
+        meta = {
+          "type":"descend_grasp_boost",
+          "success":success,
+          "original":"synthetic",
+          "timestamp":datetime.utcnow().isoformat()+"Z"
+        }
+        with open(ep_dir/"meta.json","w") as f: json.dump(meta,f,indent=2)
+        ep_counter+=1
+    # Fine alignment boosters
+    for j in trange(fine_n, desc="Booster MOVE_FINE"):
+        frames, states, actions, dones, success = fine_align_sequence(env_fine)
+        ep_dir = root / f"episode_fine_{j:03d}"
+        ep_dir.mkdir(exist_ok=True)
+        np.savez_compressed(ep_dir/"trajectory.npz",
+            obs_rgb=np.stack(frames).astype(np.uint8),
+            obs_state=np.stack(states).astype(np.float32),
+            actions=np.stack(actions).astype(np.float32),
+            dones=np.array(dones,dtype=bool),
+            success=np.array([success],dtype=bool)
+        )
+        meta = {
+          "type":"move_fine_boost",
+          "success":success,
+          "original":"synthetic",
+          "timestamp":datetime.utcnow().isoformat()+"Z"
+        }
+        with open(ep_dir/"meta.json","w") as f: json.dump(meta,f,indent=2)
+        ep_counter+=1
+    env_desc.close(); env_fine.close()
+    print("Booster episodes created:", ep_counter)
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--descend_n", type=int, default=40)
+    ap.add_argument("--fine_n", type=int, default=40)
+    ap.add_argument("--out_dir", type=str, default="data/raw/mj_pick_place_phase_boost")
+    ap.add_argument("--seed", type=int, default=555)
+    args = ap.parse_args()
+    collect(args.descend_n, args.fine_n, args.out_dir, args.seed)

@@ -1,0 +1,113 @@
+import argparse, torch, numpy as np
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+from pathlib import Path
+from tqdm import tqdm
+from lerobot_dataset.pick_place_mj_builder import MjPickPlaceOfflineDataset
+from models.critic import ValueNet, QNet
+
+class TransitionDataset(torch.utils.data.Dataset):
+    def __init__(self, base, discount=0.99, shaped=False):
+        self.base = base
+        self.discount = discount
+        self.shaped = shaped
+
+    def __len__(self): return len(self.base)
+    def __getitem__(self, idx):
+        it = self.base[idx]
+        s  = it["obs_state"].astype(np.float32)
+        ns = it["next_obs_state"].astype(np.float32)
+        a  = it["action"].astype(np.float32)
+        d  = float(it["done"])
+        success = float(it["success"])
+        # Sparse reward
+        r = success if d and success > 0 else 0.0
+        if self.shaped:
+            # Add simple shaping: negative distance to target center (using state)
+            cube = s[4:7]; tgt = s[7:9]
+            dist_xy = np.linalg.norm(cube[:2]-tgt)
+            r += -0.05 * dist_xy
+        phase_id = it["phase_id"]
+        return {
+            "s": s, "a": a, "ns": ns,
+            "r": np.array([r], dtype=np.float32),
+            "d": np.array([d], dtype=np.float32),
+            "phase": phase_id
+        }
+
+def expectile_loss(diff, expectile=0.7):
+    # diff = q - v
+    weight = torch.where(diff > 0, expectile, 1 - expectile)
+    return (weight * diff.pow(2)).mean()
+
+def main(args):
+    base = MjPickPlaceOfflineDataset(args.data_root, use_paraphrase=False)
+    ds = TransitionDataset(base, discount=args.gamma, shaped=args.shaped_reward)
+    dl = DataLoader(ds, batch_size=args.batch_size, shuffle=True)
+
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+
+    state_dim = base[0]["obs_state"].shape[0]
+    action_dim = base[0]["action"].shape[0]
+
+    vnet = ValueNet(state_dim).to(device)
+    qnet = QNet(state_dim, action_dim).to(device)
+
+    opt_v = torch.optim.Adam(vnet.parameters(), lr=args.lr)
+    opt_q = torch.optim.Adam(qnet.parameters(), lr=args.lr)
+
+    for epoch in range(1, args.epochs+1):
+        v_losses=[]
+        q_losses=[]
+        for batch in tqdm(dl, desc=f"epoch {epoch}"):
+            s  = torch.from_numpy(batch["s"]).to(device)
+            a  = torch.from_numpy(batch["a"]).to(device)
+            ns = torch.from_numpy(batch["ns"]).to(device)
+            r  = torch.from_numpy(batch["r"]).to(device).squeeze(-1)
+            d  = torch.from_numpy(batch["d"]).to(device).squeeze(-1)
+            p  = torch.tensor(batch["phase"], device=device, dtype=torch.long)
+
+            with torch.no_grad():
+                v_ns = vnet(ns, p)
+                target_q = r + args.gamma * (1 - d) * v_ns
+
+            # Q update
+            q_pred = qnet(s,a,p)
+            loss_q = F.mse_loss(q_pred, target_q)
+            opt_q.zero_grad()
+            loss_q.backward()
+            opt_q.step()
+
+            # V update (expectile regression)
+            with torch.no_grad():
+                q_pred_detached = qnet(s,a,p)
+            diff = q_pred_detached - vnet(s,p)
+            loss_v = expectile_loss(diff, args.expectile)
+            opt_v.zero_grad()
+            loss_v.backward()
+            opt_v.step()
+
+            q_losses.append(loss_q.item())
+            v_losses.append(loss_v.item())
+
+        print(f"epoch {epoch} q_loss={np.mean(q_losses):.5f} v_loss={np.mean(v_losses):.5f}")
+
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(qnet.state_dict(), out_dir / "qnet.pt")
+    torch.save(vnet.state_dict(), out_dir / "vnet.pt")
+    print("Saved critics to", out_dir)
+
+if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data_root", type=str, default="data/raw/mj_pick_place_v5")
+    ap.add_argument("--batch_size", type=int, default=128)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--epochs", type=int, default=5)
+    ap.add_argument("--gamma", type=float, default=0.99)
+    ap.add_argument("--expectile", type=float, default=0.7)
+    ap.add_argument("--shaped_reward", action="store_true")
+    ap.add_argument("--out_dir", type=str, default="models/ckpts_iql")
+    args = ap.parse_args()
+    main(args)

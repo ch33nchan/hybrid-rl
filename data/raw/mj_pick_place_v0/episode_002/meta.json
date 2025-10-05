@@ -1,0 +1,17 @@
+{
+  "episode": 2,
+  "success": false,
+  "steps": 120,
+  "seed": 44,
+  "timestamp": "2025-10-03T23:03:01.886362Z",
+  "instruction": "pick and place the red cube onto the green target",
+  "instruction_base": "pick and place the red cube onto the green target",
+  "instruction_paraphrases": [
+    "pick and set the crimson block onto the green target",
+    "pick up and place the red cube onto the green target",
+    "pick and set the red cube onto the green target",
+    "grasp and place the crimson block onto the green marker",
+    "pick and place the red block onto the green pad",
+    "lift and set the red cube onto the green target"
+  ]
+}

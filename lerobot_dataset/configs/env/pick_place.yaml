@@ -1,0 +1,25 @@
+# Future Hydra/Config file (not actively used yet)
+env:
+  name: pick_place_v0
+  gui: false
+  max_steps: 120
+  seed: 42
+  render:
+    width: 128
+    height: 128
+data:
+  root: data/raw/pick_place_v0
+  train_split: 0.9
+  shuffle: true
+model:
+  encoder:
+    vision_backbone: "clip-vit-b16"
+    freeze: true
+  policy:
+    type: "bc"
+    hidden_dim: 256
+    action_dim: 5
+training:
+  batch_size: 64
+  lr: 3e-4
+  epochs: 20

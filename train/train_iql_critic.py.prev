@@ -1,0 +1,135 @@
+import argparse, torch, numpy as np
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+from pathlib import Path
+from tqdm import tqdm
+from lerobot_dataset.pick_place_mj_builder import MjPickPlaceOfflineDataset
+from models.critic import ValueNet, QNet
+
+class TransitionDataset(torch.utils.data.Dataset):
+    def __init__(self, base, discount=0.99, shaped=False):
+        self.base = base
+        self.discount = discount
+        self.shaped = shaped
+
+    def __len__(self): return len(self.base)
+
+    def __getitem__(self, idx):
+        it = self.base[idx]
+        s  = it["obs_state"].astype(np.float32)
+        ns = it["next_obs_state"].astype(np.float32)
+        a  = it["action"].astype(np.float32)
+        d  = float(it["done"])
+        success = float(it["success"])
+        # Sparse reward
+        r = success if d and success > 0 else 0.0
+        if self.shaped:
+            cube = s[4:7]; tgt = s[7:9]
+            dist_xy = np.linalg.norm(cube[:2]-tgt)
+            r += -0.05 * dist_xy
+        phase_id = it["phase_id"]
+        return {
+            "s": s,
+            "a": a,
+            "ns": ns,
+            "r": np.float32(r),
+            "d": np.float32(d),
+            "phase": phase_id
+        }
+
+def expectile_loss(diff, expectile=0.7):
+    weight = torch.where(diff > 0, expectile, 1 - expectile)
+    return (weight * diff.pow(2)).mean()
+
+def to_tensor(x, device):
+    if isinstance(x, torch.Tensor):
+        return x.to(device)
+    return torch.as_tensor(x, device=device)
+
+def main(args):
+    base = MjPickPlaceOfflineDataset(args.data_root, use_paraphrase=False)
+    if len(base) == 0:
+        raise RuntimeError("Dataset empty at: " + args.data_root)
+
+    ds = TransitionDataset(base, discount=args.gamma, shaped=args.shaped_reward)
+    dl = DataLoader(ds, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=0)
+
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    state_dim = base[0]["obs_state"].shape[0]
+    action_dim = base[0]["action"].shape[0]
+
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load or init
+    vnet = ValueNet(state_dim).to(device)
+    qnet = QNet(state_dim, action_dim).to(device)
+
+    if args.resume and (out_dir / "qnet.pt").exists():
+        qnet.load_state_dict(torch.load(out_dir / "qnet.pt", map_location=device))
+        vnet.load_state_dict(torch.load(out_dir / "vnet.pt", map_location=device))
+        print("Resumed existing critic weights.")
+
+    opt_v = torch.optim.Adam(vnet.parameters(), lr=args.lr)
+    opt_q = torch.optim.Adam(qnet.parameters(), lr=args.lr)
+
+    for epoch in range(1, args.epochs+1):
+        q_losses=[]
+        v_losses=[]
+        for batch in tqdm(dl, desc=f"epoch {epoch}"):
+            s  = to_tensor(batch["s"], device)
+            a  = to_tensor(batch["a"], device)
+            ns = to_tensor(batch["ns"], device)
+            r  = to_tensor(batch["r"], device)
+            d  = to_tensor(batch["d"], device)
+            p  = torch.as_tensor(batch["phase"], device=device, dtype=torch.long)
+
+            # ---------------- Q update ----------------
+            with torch.no_grad():
+                v_ns = vnet(ns, p)
+                target_q = r + args.gamma * (1 - d) * v_ns
+
+            q_pred = qnet(s, a, p)
+            loss_q = F.mse_loss(q_pred, target_q)
+            opt_q.zero_grad()
+            loss_q.backward()
+            if args.grad_clip > 0:
+                torch.nn.utils.clip_grad_norm_(qnet.parameters(), args.grad_clip)
+            opt_q.step()
+
+            # ---------------- V update (expectile) ----
+            with torch.no_grad():
+                q_detach = qnet(s, a, p)
+            diff = q_detach - vnet(s, p)
+            loss_v = expectile_loss(diff, args.expectile)
+            opt_v.zero_grad()
+            loss_v.backward()
+            if args.grad_clip > 0:
+                torch.nn.utils.clip_grad_norm_(vnet.parameters(), args.grad_clip)
+            opt_v.step()
+
+            q_losses.append(loss_q.item())
+            v_losses.append(loss_v.item())
+
+        print(f"epoch {epoch} q_loss={np.mean(q_losses):.5f} v_loss={np.mean(v_losses):.5f}")
+
+        if epoch % args.save_every == 0 or epoch == args.epochs:
+            torch.save(qnet.state_dict(), out_dir / "qnet.pt")
+            torch.save(vnet.state_dict(), out_dir / "vnet.pt")
+            print("Saved critics at epoch", epoch)
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data_root", type=str, default="data/raw/mj_pick_place_v5")
+    ap.add_argument("--batch_size", type=int, default=128)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--epochs", type=int, default=5)
+    ap.add_argument("--gamma", type=float, default=0.99)
+    ap.add_argument("--expectile", type=float, default=0.7)
+    ap.add_argument("--shaped_reward", action="store_true")
+    ap.add_argument("--grad_clip", type=float, default=1.0)
+    ap.add_argument("--save_every", type=int, default=1)
+    ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--out_dir", type=str, default="models/ckpts_iql")
+    args = ap.parse_args()
+    main(args)

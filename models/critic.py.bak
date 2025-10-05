@@ -1,0 +1,35 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class ValueNet(nn.Module):
+    def __init__(self, state_dim, phase_dim=6, hidden=256):
+        super().__init__()
+        self.embed_phase = nn.Embedding(phase_dim, 32)
+        self.net = nn.Sequential(
+            nn.Linear(state_dim+32, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1)
+        )
+    def forward(self, state, phase_id):
+        ph = self.embed_phase(phase_id)
+        x = torch.cat([state, ph], dim=-1)
+        return self.net(x).squeeze(-1)
+
+class QNet(nn.Module):
+    def __init__(self, state_dim, action_dim, phase_dim=6, hidden=256):
+        super().__init__()
+        self.embed_phase = nn.Embedding(phase_dim, 32)
+        self.net = nn.Sequential(
+            nn.Linear(state_dim + action_dim + 32, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, 1)
+        )
+    def forward(self, state, action, phase_id):
+        ph = self.embed_phase(phase_id)
+        x = torch.cat([state, action, ph], dim=-1)
+        return self.net(x).squeeze(-1)

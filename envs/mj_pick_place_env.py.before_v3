@@ -1,0 +1,198 @@
+import numpy as np
+import mujoco
+from dataclasses import dataclass
+from pathlib import Path
+
+@dataclass
+class MjPickPlaceConfig:
+    xml_path: str = "assets/models/pick_place.xml"
+    render_width: int = 128
+    render_height: int = 128
+    max_steps: int = 120
+    action_scale_xy: float = 0.06
+    action_scale_z: float = 0.06
+    z_min: float = 0.02
+    z_max: float = 0.30
+    seed: int = 0
+    grasp_distance: float = 0.035
+    success_radius: float = 0.05
+    lift_height_thresh: float = 0.085
+    release_radius: float = 0.055
+    release_min_z: float = 0.045
+    attach_height_offset: float = 0.0
+    early_terminate_on_success: bool = True
+    debug: bool = False
+
+class MjPickPlaceEnv:
+    """
+    Simplified pick & place:
+      Success if:
+        (dist_xy < success_radius AND cube_z > lift_height_thresh)
+        OR (released AND dist_xy < release_radius AND cube_z > release_min_z)
+    Cube follows EEF exactly while attached.
+    """
+    def __init__(self, cfg: MjPickPlaceConfig):
+        self.cfg = cfg
+        self.rng = np.random.default_rng(cfg.seed)
+        xml_full = Path(cfg.xml_path)
+        if not xml_full.exists():
+            raise FileNotFoundError(f"Missing XML: {xml_full}")
+        self.model = mujoco.MjModel.from_xml_path(str(xml_full))
+        self.data = mujoco.MjData(self.model)
+
+        self.cube_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "cube_body")
+        self.target_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target_body")
+        self.target_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "target")
+        self.eef_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "mocap_eef")
+        self.cube_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "cube_free")
+
+        self._attached = False
+        self.gripper_closed = 0.0
+        self.step_count = 0
+        self._offscreen = None
+        self._cam_initialized = False
+        self._last_success_flag = False
+
+    def reset(self):
+        mujoco.mj_resetData(self.model, self.data)
+        self.step_count = 0
+        self.gripper_closed = 0.0
+        self._attached = False
+        self._last_success_flag = False
+
+        cube_xy = self.rng.uniform(-0.12, 0.12, size=2)
+        qadr = self.model.jnt_qposadr[self.cube_joint_id]
+        # free joint: x y z qw qx qy qz
+        self.data.qpos[qadr:qadr+7] = np.array([cube_xy[0], cube_xy[1], 0.035, 1, 0, 0, 0], dtype=np.float64)
+
+        tgt_xy = self.rng.uniform(-0.12, 0.12, size=2)
+        self.model.body_pos[self.target_body_id][:2] = tgt_xy
+
+        self._set_mocap_pos(np.array([0.0, 0.0, 0.18], dtype=np.float64))
+        mujoco.mj_forward(self.model, self.data)
+        for _ in range(4):
+            mujoco.mj_step(self.model, self.data)
+        return self._get_obs()
+
+    def close(self):
+        if self._offscreen is not None and hasattr(self._offscreen, "close"):
+            try:
+                self._offscreen.close()
+            except Exception:
+                pass
+            self._offscreen = None
+
+    # --- Internal getters ---
+    def _set_mocap_pos(self, pos):
+        mocap_id = self.model.body_mocapid[self.eef_body_id]
+        self.data.mocap_pos[mocap_id] = pos
+
+    def _get_cube_pos(self): return self.data.xpos[self.cube_body_id].copy()
+    def _get_target_xy(self): return self.data.site_xpos[self.target_site_id][:2].copy()
+    def _get_eef_pos(self): return self.data.xpos[self.eef_body_id].copy()
+
+    # --- Attach/Detach ---
+    def _try_attach(self):
+        if self._attached: return
+        if np.linalg.norm(self._get_eef_pos() - self._get_cube_pos()) < self.cfg.grasp_distance:
+            self._attached = True
+
+    def _detach(self):
+        self._attached = False
+
+    # --- Core step ---
+    def step(self, action: np.ndarray):
+        action = np.clip(action, -1, 1)
+        dx, dy, dz, g = action
+        eef = self._get_eef_pos()
+        target_pos = eef + np.array([dx * self.cfg.action_scale_xy,
+                                     dy * self.cfg.action_scale_xy,
+                                     dz * self.cfg.action_scale_z])
+        target_pos[2] = np.clip(target_pos[2], self.cfg.z_min, self.cfg.z_max)
+        self._set_mocap_pos(target_pos)
+
+        new_closed = 1.0 if g > 0 else 0.0
+        if new_closed > 0.5 and self.gripper_closed < 0.5:
+            self._try_attach()
+        elif new_closed < 0.5 and self.gripper_closed > 0.5:
+            self._detach()
+        self.gripper_closed = new_closed
+
+        if self._attached:
+            eef_pos = self._get_eef_pos()
+            qadr = self.model.jnt_qposadr[self.cube_joint_id]
+            self.data.qpos[qadr:qadr+7] = np.array([eef_pos[0], eef_pos[1], eef_pos[2] + self.cfg.attach_height_offset, 1, 0, 0, 0], dtype=np.float64)
+
+        mujoco.mj_step(self.model, self.data)
+        self.step_count += 1
+
+        obs = self._get_obs()
+        done, success = self._compute_done_success()
+        reward = 1.0 if success else 0.0
+        if success and self.cfg.early_terminate_on_success:
+            done = True
+        self._last_success_flag = success
+        if self.cfg.debug and success:
+            cp = self._get_cube_pos()
+            dist_xy = np.linalg.norm(cp[:2] - self._get_target_xy())
+            print(f"[DEBUG] success dist_xy={dist_xy:.4f} z={cp[2]:.4f} attached={self._attached} step={self.step_count}")
+        return obs, reward, done, {"success": success}
+
+    def _compute_done_success(self):
+        cube = self._get_cube_pos()
+        tgt = self._get_target_xy()
+        dist_xy = np.linalg.norm(cube[:2] - tgt)
+        lifted = cube[2] > self.cfg.lift_height_thresh
+        released_success = (self.gripper_closed < 0.5) and (dist_xy < self.cfg.release_radius) and (cube[2] > self.cfg.release_min_z)
+        success = (dist_xy < self.cfg.success_radius and lifted) or released_success
+        timeout = self.step_count >= self.cfg.max_steps
+        return (success or timeout), success
+
+    def _get_obs(self):
+        rgb = self._render()
+        eef = self._get_eef_pos()
+        cube = self._get_cube_pos()
+        tgt = self._get_target_xy()
+        state = np.concatenate([
+            eef[:3].astype(np.float32),
+            np.array([self.gripper_closed], dtype=np.float32),
+            cube[:3].astype(np.float32),
+            tgt.astype(np.float32)
+        ])
+        return {"rgb": rgb, "state": state}
+
+    def get_debug(self):
+        cube = self._get_cube_pos()
+        tgt = self._get_target_xy()
+        return {
+            "cube_pos": cube,
+            "target_xy": tgt,
+            "dist_xy": float(np.linalg.norm(cube[:2] - tgt)),
+            "cube_z": float(cube[2]),
+            "attached": self._attached,
+            "gripper_closed": self.gripper_closed,
+            "step": self.step_count,
+            "last_success": self._last_success_flag
+        }
+
+    # --- Rendering ---
+    def _setup_offscreen(self):
+        if not self._cam_initialized:
+            self._offscreen = mujoco.Renderer(self.model, self.cfg.render_width, self.cfg.render_height)
+            self._cam_initialized = True
+
+    def _render(self):
+        self._setup_offscreen()
+        self._offscreen.update_scene(self.data)
+        return self._offscreen.render()
+
+if __name__ == "__main__":
+    env = MjPickPlaceEnv(MjPickPlaceConfig(debug=True))
+    o = env.reset()
+    for i in range(120):
+        a = np.array([0,0,-0.3,0])
+        o,r,d,info = env.step(a)
+        if d:
+            print("Terminated", info)
+            break
+    env.close()

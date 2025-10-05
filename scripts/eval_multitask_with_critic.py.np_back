@@ -1,0 +1,89 @@
+import argparse, torch, numpy as np
+from envs.mj_pick_place_env import MjPickPlaceEnv, MjPickPlaceConfig
+from models.multitask_policy import MultiTaskPolicy
+from models.critic import QNet
+from utils.phase_labeling import label_phase
+
+PHASE_ACTION_CANDS = {0:4,1:6,2:8,3:6,4:10,5:12}
+
+def load_multitask(path, state_dim, action_dim, device):
+    m = MultiTaskPolicy(state_dim, action_dim, num_phases=6)
+    sd = torch.load(path, map_location=device)
+    m.load_state_dict(sd)
+    m.to(device).eval()
+    return m
+
+def load_qnet(path, state_dim, action_dim, device):
+    # Always instantiate twin=True so we can load either (single or twin) states.
+    q = QNet(state_dim, action_dim, twin=True).to(device)
+    sd = torch.load(path, map_location=device)
+    missing=[]
+    unexpected=[]
+    try:
+        q.load_state_dict(sd, strict=False)
+    except RuntimeError as e:
+        print("[WARN] Non-strict load fallback:", e)
+    q.eval()
+    return q
+
+def choose_action(policy, qnet, state, phase, device, noise_scale, min_adv_margin):
+    with torch.no_grad():
+        st = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        base_a, phase_logits = policy(st)
+        base_a = base_a.squeeze(0).cpu().numpy()
+    cand_n = PHASE_ACTION_CANDS.get(phase,8)
+    cands = [base_a]
+    for _ in range(cand_n-1):
+        cands.append(np.clip(base_a + np.random.randn(*base_a.shape)*noise_scale, -1,1))
+    s_b = torch.from_numpy(np.repeat(state[None,:], len(cands),axis=0)).float().to(device)
+    a_b = torch.from_numpy(np.stack(cands)).float().to(device)
+    p_b = torch.full((len(cands),), phase, dtype=torch.long, device=device)
+    with torch.no_grad():
+        q1,q2 = qnet(s_b,a_b,p_b)
+        q_vals = torch.min(q1,q2)
+    q_np = q_vals.cpu().numpy()
+    best = int(np.argmax(q_np))
+    adv = q_np[best] - np.median(q_np)
+    if adv < min_adv_margin:
+        return base_a, base_a, q_np
+    return cands[best], base_a, q_np
+
+def run(args):
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    env_tmp = MjPickPlaceEnv(MjPickPlaceConfig(seed=args.seed))
+    probe = env_tmp.reset()
+    state_dim = probe["state"].shape[0]; action_dim=4
+    env_tmp.close()
+
+    policy = load_multitask(args.policy_ckpt, state_dim, action_dim, device)
+    qnet = load_qnet(args.qnet_ckpt, state_dim, action_dim, device)
+
+    env = MjPickPlaceEnv(MjPickPlaceConfig(seed=args.seed))
+    successes=0
+    for ep in range(args.episodes):
+        obs = env.reset()
+        steps=0
+        while True:
+            st = obs["state"]
+            phase = label_phase(st)
+            act, base, qvals = choose_action(policy, qnet, st, phase, device,
+                                             args.noise_scale, args.min_adv_margin)
+            obs,r,d,info = env.step(act)
+            steps += 1
+            if d:
+                print(f"Episode {ep} success={info['success']} steps={steps}")
+                successes += int(info["success"])
+                break
+    env.close()
+    print(f"Multitask TwinQ Filtered SR: {successes/args.episodes*100:.2f}%")
+
+if __name__ == "__main__":
+    ap=argparse.ArgumentParser()
+    ap.add_argument("--policy_ckpt", type=str, default="models/ckpts_multitask_balanced_v3/multitask_policy.pt")
+    ap.add_argument("--qnet_ckpt", type=str, default="models/ckpts_iql_balanced_v3/qnet.pt")
+    ap.add_argument("--episodes", type=int, default=30)
+    ap.add_argument("--seed", type=int, default=1234)
+    ap.add_argument("--noise_scale", type=float, default=0.12)
+    ap.add_argument("--min_adv_margin", type=float, default=0.02)
+    args=ap.parse_args()
+    run(args)

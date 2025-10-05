@@ -1,0 +1,75 @@
+import argparse, torch, numpy as np
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+from pathlib import Path
+from tqdm import tqdm
+from lerobot_dataset.pick_place_mj_builder import MjPickPlaceOfflineDataset
+from models.multitask_policy import MultiTaskPolicy
+
+class MTStateDataset(torch.utils.data.Dataset):
+    def __init__(self, base):
+        self.base = base
+    def __len__(self): return len(self.base)
+    def __getitem__(self, idx):
+        it = self.base[idx]
+        return {
+            "state": it["obs_state"].astype(np.float32),
+            "action": it["action"].astype(np.float32),
+            "phase_id": it["phase_id"]
+        }
+
+def phase_loss_fn(logits, targets):
+    return F.cross_entropy(logits, targets)
+
+def main(args):
+    base = MjPickPlaceOfflineDataset(args.data_root, use_paraphrase=False)
+    state_dim = base[0]["obs_state"].shape[0]
+    action_dim = base[0]["action"].shape[0]
+    dataset = MTStateDataset(base)
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = MultiTaskPolicy(state_dim, action_dim, num_phases=6, hidden=args.hidden).to(device)
+    optim = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    for epoch in range(1, args.epochs+1):
+        model.train()
+        losses=[]
+        bc_losses=[]
+        ph_losses=[]
+        for batch in tqdm(loader, desc=f"epoch {epoch}"):
+            s = batch["state"].to(device)
+            a = batch["action"].to(device)
+            ph = batch["phase_id"].to(device)
+
+            pred_a, phase_logits = model(s)
+            l_bc = F.mse_loss(pred_a, a)
+            l_ph = phase_loss_fn(phase_logits, ph)
+            loss = l_bc + args.phase_loss_weight * l_ph
+
+            optim.zero_grad()
+            loss.backward()
+            optim.step()
+
+            losses.append(loss.item())
+            bc_losses.append(l_bc.item())
+            ph_losses.append(l_ph.item())
+
+        print(f"epoch {epoch} total={np.mean(losses):.5f} bc={np.mean(bc_losses):.5f} phase={np.mean(ph_losses):.5f}")
+
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), out_dir / "multitask_policy.pt")
+    print("Saved:", out_dir / "multitask_policy.pt")
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data_root", type=str, default="data/raw/mj_pick_place_v5")
+    ap.add_argument("--batch_size", type=int, default=64)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--epochs", type=int, default=5)
+    ap.add_argument("--phase_loss_weight", type=float, default=0.3)
+    ap.add_argument("--hidden", type=int, default=256)
+    ap.add_argument("--out_dir", type=str, default="models/ckpts_multitask")
+    args = ap.parse_args()
+    main(args)

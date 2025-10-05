@@ -1,0 +1,32 @@
+<mujoco model="pick_place">
+  <compiler angle="degree" coordinate="local"/>
+  <option timestep="0.01" gravity="0 0 -9.81" integrator="RK4"/>
+  <size njmax="200" nconmax="60"/>
+  <asset>
+    <texture type="skybox" builtin="gradient" width="256" height="256" rgb1="0.7 0.8 0.9" rgb2="0.2 0.3 0.4"/>
+    <material name="mat_table" rgba="0.4 0.4 0.4 1"/>
+    <material name="mat_cube" rgba="0.9 0.2 0.2 1"/>
+    <material name="mat_target" rgba="0.2 0.9 0.2 0.5"/>
+    <material name="mat_gripper" rgba="0.2 0.2 0.9 1"/>
+  </asset>
+  <worldbody>
+    <geom name="table" type="box" size="0.35 0.35 0.02" pos="0 0 0" material="mat_table" contype="1" conaffinity="1"/>
+    <body name="target_body" pos="0 0 0.021">
+      <geom name="target_disc" type="cylinder" size="0.03 0.001" material="mat_target" contype="0" conaffinity="0"/>
+      <site name="target" pos="0 0 0.001" size="0.03" rgba="0.2 0.9 0.2 0.5" type="sphere"/>
+    </body>
+    <body name="cube_body" pos="0 0 0.035">
+      <joint name="cube_free" type="free" damping="0.0005"/>
+      <geom name="cube" type="box" size="0.015 0.015 0.015" material="mat_cube" density="400"/>
+    </body>
+    <body name="mocap_eef" pos="0 0 0.18" mocap="true">
+      <geom name="eef_vis" type="sphere" size="0.015" material="mat_gripper"/>
+      <site name="eef_site" pos="0 0 0" size="0.008" rgba="0.1 0.1 1 1"/>
+    </body>
+  </worldbody>
+  <actuator/>
+  <visual>
+    <map znear="0.01" zfar="3.0"/>
+    <quality shadowsize="2048"/>
+  </visual>
+</mujoco>

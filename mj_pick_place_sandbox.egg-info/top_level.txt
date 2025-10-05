@@ -1,0 +1,10 @@
+assets
+configs
+data
+envs
+lerobot_dataset
+logs
+models
+scripts
+train
+utils

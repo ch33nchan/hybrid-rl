@@ -1,0 +1,8 @@
+{
+  "episode": 38,
+  "success": true,
+  "steps": 14,
+  "seed": 80,
+  "timestamp": "2025-10-04T22:29:14.064518Z",
+  "instruction": "pick and place the red cube onto the green target (v5 servo)"
+}

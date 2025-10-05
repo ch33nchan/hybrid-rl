@@ -1,0 +1,91 @@
+import argparse, torch, numpy as np
+from envs.mj_pick_place_env import MjPickPlaceEnv, MjPickPlaceConfig
+from models.bc_policy import SimpleBC
+from models.critic import QNet, ValueNet
+from utils.phase_labeling import label_phase
+
+def load_bc(path, state_dim, action_dim, device):
+    model = SimpleBC(state_dim, action_dim).to(device)
+    sd = torch.load(path, map_location=device)
+    model.load_state_dict(sd)
+    model.eval()
+    return model
+
+def load_critics(q_path, v_path, state_dim, action_dim, device):
+    qnet = QNet(state_dim, action_dim).to(device)
+    vnet = ValueNet(state_dim).to(device)
+    qnet.load_state_dict(torch.load(q_path, map_location=device))
+    vnet.load_state_dict(torch.load(v_path, map_location=device))
+    qnet.eval(); vnet.eval()
+    return qnet, vnet
+
+def choose_action(policy, qnet, state, phase_id, device, base_noise, candidates, noise_scale):
+    """
+    1. Get base action from policy.
+    2. Generate candidates by Gaussian perturbation.
+    3. Score with Q; pick best.
+    """
+    with torch.no_grad():
+        s_t = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        base_a = policy(s_t).squeeze(0).cpu().numpy()
+    cand_actions = []
+    cand_actions.append(base_a)
+    for _ in range(candidates - 1):
+        cand_actions.append(base_a + np.random.randn(*base_a.shape) * noise_scale)
+    # Clip to reasonable range
+    cand_actions = [np.clip(a, -1, 1) for a in cand_actions]
+
+    # Score
+    s_batch = torch.from_numpy(np.repeat(state[None,:], len(cand_actions), axis=0)).float().to(device)
+    a_batch = torch.from_numpy(np.stack(cand_actions)).float().to(device)
+    p_batch = torch.full((len(cand_actions),), phase_id, dtype=torch.long, device=device)
+    with torch.no_grad():
+        q_vals = qnet(s_batch, a_batch, p_batch)
+    best_idx = int(torch.argmax(q_vals).item())
+    return cand_actions[best_idx], base_a, q_vals.cpu().numpy()
+
+def run_eval(args):
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+
+    # Probe state/action dims
+    tmp_env = MjPickPlaceEnv(MjPickPlaceConfig(seed=args.seed))
+    probe = tmp_env.reset()
+    state_dim = probe["state"].shape[0]
+    action_dim = 4  # known
+    tmp_env.close()
+
+    policy = load_bc(args.policy_ckpt, state_dim, action_dim, device)
+    qnet, vnet = load_critics(args.qnet_ckpt, args.vnet_ckpt, state_dim, action_dim, device)
+
+    env = MjPickPlaceEnv(MjPickPlaceConfig(seed=args.seed))
+    successes=0
+    for ep in range(args.episodes):
+        obs = env.reset()
+        steps = 0
+        while True:
+            state = obs["state"]
+            phase_id = label_phase(state)
+            act, base_act, qvals = choose_action(
+                policy, qnet, state, phase_id, device,
+                base_noise=0.0, candidates=args.candidates, noise_scale=args.noise_scale
+            )
+            obs, r, done, info = env.step(act)
+            steps += 1
+            if done:
+                print(f"Episode {ep} success={info['success']} steps={steps}")
+                successes += int(info["success"])
+                break
+    env.close()
+    print(f"Q-filtered Success Rate: {successes/args.episodes*100:.2f}%")
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--policy_ckpt", type=str, default="models/ckpts/bc_policy.pt")
+    ap.add_argument("--qnet_ckpt", type=str, default="models/ckpts_iql/qnet.pt")
+    ap.add_argument("--vnet_ckpt", type=str, default="models/ckpts_iql/vnet.pt")
+    ap.add_argument("--episodes", type=int, default=30)
+    ap.add_argument("--seed", type=int, default=123)
+    ap.add_argument("--candidates", type=int, default=8)
+    ap.add_argument("--noise_scale", type=float, default=0.15)
+    args = ap.parse_args()
+    run_eval(args)

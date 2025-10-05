@@ -1,0 +1,79 @@
+import argparse, torch, numpy as np
+from envs.mj_pick_place_env import MjPickPlaceEnv, MjPickPlaceConfig
+from models.multitask_policy import MultiTaskPolicy
+from models.critic import QNet
+from utils.phase_labeling import label_phase
+
+def load_multitask(path, state_dim, action_dim, device):
+    model = MultiTaskPolicy(state_dim, action_dim, num_phases=6)
+    sd = torch.load(path, map_location=device)
+    model.load_state_dict(sd)
+    model.to(device).eval()
+    return model
+
+def load_qnet(path, state_dim, action_dim, device):
+    qnet = QNet(state_dim, action_dim)
+    qnet.load_state_dict(torch.load(path, map_location=device))
+    qnet.to(device).eval()
+    return qnet
+
+def choose_action(mt_policy, qnet, state, device, phase_id, candidates, noise_scale, min_adv_margin):
+    with torch.no_grad():
+        s_t = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        base_a, phase_logits = mt_policy(s_t)
+        base_a = base_a.squeeze(0).cpu().numpy()
+    cand = [base_a]
+    for _ in range(candidates - 1):
+        cand.append(np.clip(base_a + np.random.randn(*base_a.shape)*noise_scale, -1, 1))
+    s_batch = torch.from_numpy(np.repeat(state[None,:], len(cand), axis=0)).float().to(device)
+    a_batch = torch.from_numpy(np.stack(cand)).float().to(device)
+    p_batch = torch.full((len(cand),), phase_id, dtype=torch.long, device=device)
+    with torch.no_grad():
+        q_vals = qnet(s_batch, a_batch, p_batch)
+    q_np = q_vals.cpu().numpy()
+    best = int(np.argmax(q_np))
+    median = np.median(q_np)
+    if (q_np[best] - median) < min_adv_margin:
+        return base_a, base_a, q_np
+    return cand[best], base_a, q_np
+
+def run(args):
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    tmp_env = MjPickPlaceEnv(MjPickPlaceConfig(seed=args.seed))
+    probe = tmp_env.reset()
+    state_dim = probe["state"].shape[0]; action_dim=4
+    tmp_env.close()
+
+    policy = load_multitask(args.policy_ckpt, state_dim, action_dim, device)
+    qnet = load_qnet(args.qnet_ckpt, state_dim, action_dim, device)
+
+    env = MjPickPlaceEnv(MjPickPlaceConfig(seed=args.seed))
+    successes=0
+    for ep in range(args.episodes):
+        obs=env.reset(); steps=0
+        while True:
+            state = obs["state"]
+            phase_id = label_phase(state)
+            act, base, qvals = choose_action(policy, qnet, state, device,
+                                             phase_id, args.candidates, args.noise_scale,
+                                             args.min_adv_margin)
+            obs,r,d,info = env.step(act)
+            steps+=1
+            if d:
+                print(f"Episode {ep} success={info['success']} steps={steps}")
+                successes += int(info["success"])
+                break
+    env.close()
+    print(f"Multitask+Q Success Rate: {successes/args.episodes*100:.2f}%")
+
+if __name__=="__main__":
+    ap=argparse.ArgumentParser()
+    ap.add_argument("--policy_ckpt", type=str, default="models/ckpts_multitask_balanced/multitask_policy.pt")
+    ap.add_argument("--qnet_ckpt", type=str, default="models/ckpts_iql_balanced/qnet.pt")
+    ap.add_argument("--episodes", type=int, default=30)
+    ap.add_argument("--seed", type=int, default=321)
+    ap.add_argument("--candidates", type=int, default=8)
+    ap.add_argument("--noise_scale", type=float, default=0.15)
+    ap.add_argument("--min_adv_margin", type=float, default=0.02)
+    args=ap.parse_args()
+    run(args)

@@ -1,0 +1,109 @@
+import argparse, torch, numpy as np
+from torch.utils.data import DataLoader, WeightedRandomSampler
+import torch.nn.functional as F
+from pathlib import Path
+from tqdm import tqdm
+from lerobot_dataset.pick_place_mj_builder import MjPickPlaceOfflineDataset
+from models.multitask_policy import MultiTaskPolicy
+
+NUM_PHASES=6
+
+class MTStateDataset(torch.utils.data.Dataset):
+    def __init__(self, base): self.base=base
+    def __len__(self): return len(self.base)
+    def __getitem__(self, idx):
+        it=self.base[idx]
+        return {"state":it["obs_state"].astype(np.float32),
+                "action":it["action"].astype(np.float32),
+                "phase_id":it["phase_id"]}
+
+def compute_phase_counts(ds):
+    c=np.zeros(NUM_PHASES,dtype=np.int64)
+    for i in range(len(ds)):
+        c[ds[i]["phase_id"]]+=1
+    return c
+
+def cap_weights(w, max_ratio=25.0):
+    # Avoid a single rare phase dominating training dynamics
+    w = w / w.min()
+    w = np.clip(w, 1.0, max_ratio)
+    return w / w.mean()
+
+def build_sampler(ds, counts):
+    inv = 1.0 / np.maximum(counts,1)
+    inv = inv / inv.sum()
+    weights = []
+    for i in range(len(ds)):
+        weights.append(inv[ds[i]["phase_id"]])
+    weights = np.array(weights)
+    weights /= weights.sum()
+    return WeightedRandomSampler(weights, num_samples=len(weights), replacement=True)
+
+def main(args):
+    base = MjPickPlaceOfflineDataset(args.data_root, use_paraphrase=False)
+    state_dim = base[0]["obs_state"].shape[0]; action_dim = base[0]["action"].shape[0]
+    dataset = MTStateDataset(base)
+    counts = compute_phase_counts(dataset)
+    print("Phase counts:", counts.tolist())
+    if args.sample_balance:
+        sampler = build_sampler(dataset, counts)
+        loader = DataLoader(dataset, batch_size=args.batch_size, sampler=sampler)
+    else:
+        loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+
+    raw_w = 1.0 / np.maximum(counts,1)
+    raw_w = raw_w / raw_w.sum() * NUM_PHASES
+    if args.loss_balance:
+        capped = cap_weights(raw_w, max_ratio=args.weight_cap_ratio)
+        phase_weights = torch.tensor(capped, dtype=torch.float32)
+        print("Raw weights:", raw_w)
+        print("Capped weights:", phase_weights.numpy())
+    else:
+        phase_weights=None
+
+    device=torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model=MultiTaskPolicy(state_dim, action_dim, num_phases=NUM_PHASES, hidden=args.hidden).to(device)
+    opt=torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    for epoch in range(1, args.epochs+1):
+        model.train()
+        loss_all=[]; l_bc_all=[]; l_ph_all=[]
+        for batch in tqdm(loader, desc=f"epoch {epoch}"):
+            s=torch.from_numpy(batch["state"]).to(device)
+            a=torch.from_numpy(batch["action"]).to(device)
+            p=torch.as_tensor(batch["phase_id"], device=device, dtype=torch.long)
+            pred_a, ph_logits = model(s)
+            l_bc = F.mse_loss(pred_a, a)
+            if phase_weights is not None:
+                ce = F.cross_entropy(ph_logits, p, reduction='none')
+                l_ph = (ce * phase_weights[p]).mean()
+            else:
+                l_ph = F.cross_entropy(ph_logits, p)
+            loss = l_bc + args.phase_loss_weight * l_ph
+            opt.zero_grad()
+            loss.backward()
+            if args.grad_clip>0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+            opt.step()
+            loss_all.append(loss.item()); l_bc_all.append(l_bc.item()); l_ph_all.append(l_ph.item())
+        print(f"epoch {epoch} total={np.mean(loss_all):.5f} bc={np.mean(l_bc_all):.5f} phase={np.mean(l_ph_all):.5f}")
+
+    out_dir=Path(args.out_dir); out_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), out_dir/"multitask_policy.pt")
+    print("Saved:", out_dir/"multitask_policy.pt")
+
+if __name__=="__main__":
+    ap=argparse.ArgumentParser()
+    ap.add_argument("--data_root", type=str, default="data/raw/mj_pick_place_v5")
+    ap.add_argument("--batch_size", type=int, default=64)
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--epochs", type=int, default=6)
+    ap.add_argument("--phase_loss_weight", type=float, default=0.3)
+    ap.add_argument("--hidden", type=int, default=256)
+    ap.add_argument("--grad_clip", type=float, default=1.0)
+    ap.add_argument("--sample_balance", action="store_true")
+    ap.add_argument("--loss_balance", action="store_true")
+    ap.add_argument("--weight_cap_ratio", type=float, default=20.0)
+    ap.add_argument("--out_dir", type=str, default="models/ckpts_multitask_balanced_v4")
+    args=ap.parse_args()
+    main(args)
