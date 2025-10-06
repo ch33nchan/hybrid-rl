@@ -1,0 +1,370 @@
+{
+  "method": "bc_iql_sweep_K4_noise0.080",
+  "num_seeds": 5,
+  "episodes_per_seed": 100,
+  "total_episodes": 500,
+  "all_seed_results": [
+    {
+      "seed": 42,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.99,
+          "success_rate_std": 0.09949874371066199,
+          "success_rate_se": 0.0099498743710662,
+          "success_rate_ci_95_lower": 0.9704982462327102,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 39.03,
+          "avg_steps_std": 23.621369562326397,
+          "avg_time_mean": 0.1555042552947998,
+          "avg_time_std": 0.12735461113526475,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9285714285714286
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.99,
+          "success_rate_std": 0.09949874371066199,
+          "success_rate_se": 0.0099498743710662,
+          "success_rate_ci_95_lower": 0.9704982462327102,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 39.03,
+          "avg_steps_std": 23.621369562326397,
+          "avg_time_mean": 0.12445336818695069,
+          "avg_time_std": 0.07562830822592867,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9285714285714286
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.99,
+          "success_rate_std": 0.09949874371066199,
+          "success_rate_se": 0.0099498743710662,
+          "success_rate_ci_95_lower": 0.9704982462327102,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 39.03,
+          "avg_steps_std": 23.621369562326397,
+          "avg_time_mean": 0.12522191762924195,
+          "avg_time_std": 0.07616842495770416,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9285714285714286
+        }
+      ],
+      "mean_success_across_splits": 0.9899999999999999,
+      "std_success_across_splits": 1.1102230246251565e-16
+    },
+    {
+      "seed": 123,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.98,
+          "success_rate_std": 0.13999999999999999,
+          "success_rate_se": 0.013999999999999999,
+          "success_rate_ci_95_lower": 0.95256,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 40.31,
+          "avg_steps_std": 26.60815476503397,
+          "avg_time_mean": 0.12888262510299683,
+          "avg_time_std": 0.08468981458897448,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9055299539170507
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.98,
+          "success_rate_std": 0.13999999999999999,
+          "success_rate_se": 0.013999999999999999,
+          "success_rate_ci_95_lower": 0.95256,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 40.31,
+          "avg_steps_std": 26.60815476503397,
+          "avg_time_mean": 0.13022189378738402,
+          "avg_time_std": 0.08907250085162403,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9055299539170507
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.98,
+          "success_rate_std": 0.13999999999999999,
+          "success_rate_se": 0.013999999999999999,
+          "success_rate_ci_95_lower": 0.95256,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 40.31,
+          "avg_steps_std": 26.60815476503397,
+          "avg_time_mean": 0.12972055673599242,
+          "avg_time_std": 0.08528050813813176,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9055299539170507
+        }
+      ],
+      "mean_success_across_splits": 0.98,
+      "std_success_across_splits": 0.0
+    },
+    {
+      "seed": 456,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.98,
+          "success_rate_std": 0.13999999999999999,
+          "success_rate_se": 0.013999999999999999,
+          "success_rate_ci_95_lower": 0.95256,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 41.17,
+          "avg_steps_std": 28.14109272931668,
+          "avg_time_mean": 0.13449769735336303,
+          "avg_time_std": 0.09079417948063516,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.8942307692307693
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.98,
+          "success_rate_std": 0.13999999999999999,
+          "success_rate_se": 0.013999999999999999,
+          "success_rate_ci_95_lower": 0.95256,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 41.17,
+          "avg_steps_std": 28.14109272931668,
+          "avg_time_mean": 0.13689708232879638,
+          "avg_time_std": 0.09561229275517145,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.8942307692307693
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.98,
+          "success_rate_std": 0.13999999999999999,
+          "success_rate_se": 0.013999999999999999,
+          "success_rate_ci_95_lower": 0.95256,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 41.17,
+          "avg_steps_std": 28.14109272931668,
+          "avg_time_mean": 0.17205634832382202,
+          "avg_time_std": 0.14848392482717881,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.8942307692307693
+        }
+      ],
+      "mean_success_across_splits": 0.98,
+      "std_success_across_splits": 0.0
+    },
+    {
+      "seed": 789,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 1.0,
+          "success_rate_std": 0.0,
+          "success_rate_se": 0.0,
+          "success_rate_ci_95_lower": 1.0,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 37.48,
+          "avg_steps_std": 22.238021494728347,
+          "avg_time_mean": 0.14636837005615233,
+          "avg_time_std": 0.09844191036122776,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.927536231884058
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 1.0,
+          "success_rate_std": 0.0,
+          "success_rate_se": 0.0,
+          "success_rate_ci_95_lower": 1.0,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 37.48,
+          "avg_steps_std": 22.238021494728347,
+          "avg_time_mean": 0.13509963274002076,
+          "avg_time_std": 0.08647302297584722,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.927536231884058
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 1.0,
+          "success_rate_std": 0.0,
+          "success_rate_se": 0.0,
+          "success_rate_ci_95_lower": 1.0,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 37.48,
+          "avg_steps_std": 22.238021494728347,
+          "avg_time_mean": 0.12825191736221314,
+          "avg_time_std": 0.07926427239560817,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.927536231884058
+        }
+      ],
+      "mean_success_across_splits": 1.0,
+      "std_success_across_splits": 0.0
+    },
+    {
+      "seed": 1024,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 1.0,
+          "success_rate_std": 0.0,
+          "success_rate_se": 0.0,
+          "success_rate_ci_95_lower": 1.0,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 40.75,
+          "avg_steps_std": 21.724813002647455,
+          "avg_time_mean": 0.14721391201019288,
+          "avg_time_std": 0.0808468048598274,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.8926829268292683
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 1.0,
+          "success_rate_std": 0.0,
+          "success_rate_se": 0.0,
+          "success_rate_ci_95_lower": 1.0,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 40.75,
+          "avg_steps_std": 21.724813002647455,
+          "avg_time_mean": 0.13560359477996825,
+          "avg_time_std": 0.0732409594170585,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.8926829268292683
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 1.0,
+          "success_rate_std": 0.0,
+          "success_rate_se": 0.0,
+          "success_rate_ci_95_lower": 1.0,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 40.75,
+          "avg_steps_std": 21.724813002647455,
+          "avg_time_mean": 0.1338291907310486,
+          "avg_time_std": 0.07182594678491579,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.8926829268292683
+        }
+      ],
+      "mean_success_across_splits": 1.0,
+      "std_success_across_splits": 0.0
+    }
+  ]
+}

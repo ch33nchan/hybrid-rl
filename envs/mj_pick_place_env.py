@@ -47,17 +47,43 @@ class MjPickPlaceEnv:
         self._cam_initialized=False
         self._off=None
 
-    def reset(self):
+    def reset(self, cube_range=None, target_range=None, force_corners: bool = False):
         mujoco.mj_resetData(self.model, self.data)
         self._attached=False
         self.gripper_closed=0.0
         self.step_count=0
-        cube_xy = self.rng.uniform(-0.08,0.08,size=2)
+        if cube_range is None:
+            cube_low, cube_high = -0.08, 0.08
+        else:
+            cube_low, cube_high = cube_range
+        if target_range is None:
+            tgt_low, tgt_high = -0.08, 0.08
+        else:
+            tgt_low, tgt_high = target_range
+
+        if force_corners:
+            # Choose one of four corners for cube and target separately
+            corners = np.array([
+                [cube_low, cube_low],
+                [cube_low, cube_high],
+                [cube_high, cube_low],
+                [cube_high, cube_high]
+            ])
+            cube_xy = corners[self.rng.integers(0, len(corners))]
+            tgt_corners = np.array([
+                [tgt_low, tgt_low],
+                [tgt_low, tgt_high],
+                [tgt_high, tgt_low],
+                [tgt_high, tgt_high]
+            ])
+            target_xy = tgt_corners[self.rng.integers(0, len(tgt_corners))]
+        else:
+            cube_xy = self.rng.uniform(cube_low, cube_high, size=2)
+            target_xy = self.rng.uniform(tgt_low, tgt_high, size=2)
         qadr = self.model.jnt_qposadr[self.cube_joint_id]
         self.data.qpos[qadr:qadr+7] = np.array([cube_xy[0], cube_xy[1], 0.035, 1,0,0,0], dtype=np.float64)
         if not self.cfg.lift_only:
-            tgt_xy = self.rng.uniform(-0.08,0.08,size=2)
-            self.model.body_pos[self.target_body_id][:2] = tgt_xy
+            self.model.body_pos[self.target_body_id][:2] = target_xy
         self._target_eef = np.array([0.0,0.0,0.18])
         self._set_mocap_pos(self._target_eef)
         mujoco.mj_forward(self.model, self.data)

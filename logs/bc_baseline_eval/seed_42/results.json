@@ -1,0 +1,82 @@
+{
+  "seed": 42,
+  "splits": [
+    {
+      "num_episodes": 100,
+      "success_rate_mean": 0.97,
+      "success_rate_std": 0.17058722109231983,
+      "success_rate_se": 0.017058722109231983,
+      "success_rate_ci_95_lower": 0.9365649046659053,
+      "success_rate_ci_95_upper": 1.0,
+      "avg_steps_mean": 44.78,
+      "avg_steps_std": 34.09269129886932,
+      "avg_time_mean": 0.10180946111679078,
+      "avg_time_std": 0.07970158892866472,
+      "avg_collisions": 0.0,
+      "grasp_success_rate": 0.0,
+      "failures_by_phase": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0
+      ],
+      "split_name": "standard",
+      "split_description": "In-distribution positions",
+      "phase_prediction_accuracy": 0.9269662921348315
+    },
+    {
+      "num_episodes": 100,
+      "success_rate_mean": 0.97,
+      "success_rate_std": 0.17058722109231983,
+      "success_rate_se": 0.017058722109231983,
+      "success_rate_ci_95_lower": 0.9365649046659053,
+      "success_rate_ci_95_upper": 1.0,
+      "avg_steps_mean": 44.78,
+      "avg_steps_std": 34.09269129886932,
+      "avg_time_mean": 0.09560465335845947,
+      "avg_time_std": 0.07701124370819162,
+      "avg_collisions": 0.0,
+      "grasp_success_rate": 0.0,
+      "failures_by_phase": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0
+      ],
+      "split_name": "extended",
+      "split_description": "Extended position range",
+      "phase_prediction_accuracy": 0.9269662921348315
+    },
+    {
+      "num_episodes": 100,
+      "success_rate_mean": 0.97,
+      "success_rate_std": 0.17058722109231983,
+      "success_rate_se": 0.017058722109231983,
+      "success_rate_ci_95_lower": 0.9365649046659053,
+      "success_rate_ci_95_upper": 1.0,
+      "avg_steps_mean": 44.78,
+      "avg_steps_std": 34.09269129886932,
+      "avg_time_mean": 0.08959131002426148,
+      "avg_time_std": 0.068934113368842,
+      "avg_collisions": 0.0,
+      "grasp_success_rate": 0.0,
+      "failures_by_phase": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0
+      ],
+      "split_name": "corners",
+      "split_description": "Corner positions (hard cases)",
+      "phase_prediction_accuracy": 0.9269662921348315
+    }
+  ],
+  "mean_success_across_splits": 0.9700000000000001,
+  "std_success_across_splits": 1.1102230246251565e-16
+}

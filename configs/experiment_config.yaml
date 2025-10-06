@@ -1,0 +1,145 @@
+# Experiment Configuration
+# All hyperparameters and settings in one place for reproducibility
+
+# Global settings
+experiment_name: "bc_iql_diffusion_comparison"
+random_seeds: [42, 123, 456, 789, 1024]  # 5 seeds for statistical reliability
+device: "auto"  # auto-detect: cuda > mps > cpu
+log_dir: "logs"
+checkpoint_dir: "models/checkpoints"
+results_dir: "results"
+
+# Dataset
+dataset:
+  root: "data/raw/mj_pick_place_v5"
+  train_split: 0.9
+  val_split: 0.1
+  use_paraphrase: false
+  max_samples: null  # null = use all
+
+# Environment
+environment:
+  xml_path: "assets/models/pick_place_stable.xml"
+  render_width: 128
+  render_height: 128
+  max_steps: 160
+  success_lift_height: 0.105
+  success_xy_radius: 0.055
+  
+# Evaluation
+evaluation:
+  num_episodes: 100  # Increased from 30
+  num_test_splits: 3  # Different initialization distributions
+  log_metrics:
+    - success_rate
+    - avg_steps
+    - episode_time
+    - collision_count
+    - grasp_success
+    - failure_by_phase
+  save_rollouts: true
+  save_videos: false
+
+# Behavioral Cloning
+bc:
+  hidden_dim: 256
+  num_phases: 6
+  learning_rate_sweep: [1.0e-4, 3.0e-4, 1.0e-3]
+  learning_rate: 3.0e-4  # default
+  lr_phase: 1.0e-4
+  batch_size_sweep: [64, 128, 256]
+  batch_size: 64  # default
+  epochs: 6
+  phase_loss_weight: 0.3
+  phase_warmup_epochs: 2
+  grad_clip: 1.0
+  sample_balance: true
+  loss_balance: true
+  weight_cap_ratio: 15.0
+  ema_decay: 0.02
+
+# IQL Critic
+iql:
+  hidden_dim: 256
+  twin: true  # Use twin Q-networks
+  expectile_sweep: [0.6, 0.7, 0.8]
+  expectile: 0.7  # default tau
+  learning_rate: 3.0e-4
+  batch_size: 256
+  epochs: 6
+  gamma: 0.99
+  shaped_reward: true
+  progress_reward: true
+  phase_balance: true
+
+# Critic-Guided Inference
+critic_guidance:
+  # Phase-adaptive candidate generation
+  num_candidates_per_phase:
+    0: 1   # APPROACH
+    1: 4   # DESCEND
+    2: 6   # GRASP
+    3: 6   # LIFT
+    4: 10  # MOVE
+    5: 14  # FINE
+  noise_scale_per_phase:
+    0: 0.0   # APPROACH - deterministic
+    1: 0.05  # DESCEND
+    2: 0.08  # GRASP
+    3: 0.08  # LIFT
+    4: 0.10  # MOVE
+    5: 0.12  # FINE
+  min_adv_margin: 0.015
+  # Ablation sweeps
+  # Coarse grid sweep (3 values each)
+  num_candidates_sweep: [4, 10, 16]
+  noise_scale_sweep: [0.0, 0.08, 0.15]
+
+# Diffusion Policy
+diffusion:
+  model_dim: 256
+  time_dim: 128
+  action_horizon: 8
+  action_horizon_sweep: [8, 16]
+  num_diffusion_steps: 100
+  learning_rate: 1.0e-4
+  learning_rate_sweep: [1.0e-4, 3.0e-4]
+  batch_size: 64
+  batch_size_sweep: [64, 128, 256]
+  epochs: 50  # Increased for GPU
+  grad_clip: 1.0
+  ema_decay: 0.995
+  # Sampling
+  ddim_steps: 25
+  ddim_steps_sweep: [10, 25, 50]
+  guidance_scale: 0.1
+  guidance_scale_sweep: [0.0, 0.1, 0.3, 0.6, 1.0]
+  # GPU optimizations
+  use_amp: true  # Automatic Mixed Precision
+  gradient_accumulation_steps: 1
+
+# Baselines (Priority 2)
+baselines:
+  cql:
+    enabled: false  # Set to true when implementing
+    alpha: 1.0
+    learning_rate: 3.0e-4
+  awac:
+    enabled: false
+    beta: 0.3
+    learning_rate: 3.0e-4
+
+# Logging
+logging:
+  use_wandb: false  # Set to true if using Weights & Biases
+  wandb_project: "offline_rl_manipulation"
+  wandb_entity: null
+  log_interval: 100
+  save_interval: 1  # epochs
+  verbose: true
+
+# Reproducibility
+reproducibility:
+  deterministic: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false

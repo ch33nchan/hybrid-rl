@@ -1,0 +1,418 @@
+{
+  "method": "bc_iql_sweep_K1_noise0.100",
+  "num_seeds": 5,
+  "episodes_per_seed": 100,
+  "total_episodes": 500,
+  "all_seed_results": [
+    {
+      "seed": 42,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.97,
+          "success_rate_std": 0.17058722109231983,
+          "success_rate_se": 0.017058722109231983,
+          "success_rate_ci_95_lower": 0.9365649046659053,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 44.78,
+          "avg_steps_std": 34.09269129886932,
+          "avg_time_mean": 0.0794562554359436,
+          "avg_time_std": 0.05858363618836714,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9269662921348315
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.97,
+          "success_rate_std": 0.17058722109231983,
+          "success_rate_se": 0.017058722109231983,
+          "success_rate_ci_95_lower": 0.9365649046659053,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 44.78,
+          "avg_steps_std": 34.09269129886932,
+          "avg_time_mean": 0.0788979172706604,
+          "avg_time_std": 0.058566508150961996,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9269662921348315
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.97,
+          "success_rate_std": 0.17058722109231983,
+          "success_rate_se": 0.017058722109231983,
+          "success_rate_ci_95_lower": 0.9365649046659053,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 44.78,
+          "avg_steps_std": 34.09269129886932,
+          "avg_time_mean": 0.07932086944580079,
+          "avg_time_std": 0.05950763604559936,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9269662921348315
+        }
+      ],
+      "mean_success_across_splits": 0.9700000000000001,
+      "std_success_across_splits": 1.1102230246251565e-16
+    },
+    {
+      "seed": 123,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.95,
+          "success_rate_std": 0.21794494717703372,
+          "success_rate_se": 0.021794494717703373,
+          "success_rate_ci_95_lower": 0.9072827903533014,
+          "success_rate_ci_95_upper": 0.9927172096466985,
+          "avg_steps_mean": 45.34,
+          "avg_steps_std": 37.001681042893175,
+          "avg_time_mean": 0.07880764484405517,
+          "avg_time_std": 0.06465888436415816,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9138576779026217
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.95,
+          "success_rate_std": 0.21794494717703372,
+          "success_rate_se": 0.021794494717703373,
+          "success_rate_ci_95_lower": 0.9072827903533014,
+          "success_rate_ci_95_upper": 0.9927172096466985,
+          "avg_steps_mean": 45.34,
+          "avg_steps_std": 37.001681042893175,
+          "avg_time_mean": 0.07942622423171997,
+          "avg_time_std": 0.06615012604242983,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9138576779026217
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.95,
+          "success_rate_std": 0.21794494717703372,
+          "success_rate_se": 0.021794494717703373,
+          "success_rate_ci_95_lower": 0.9072827903533014,
+          "success_rate_ci_95_upper": 0.9927172096466985,
+          "avg_steps_mean": 45.34,
+          "avg_steps_std": 37.001681042893175,
+          "avg_time_mean": 0.09350727558135986,
+          "avg_time_std": 0.0942121661610493,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9138576779026217
+        }
+      ],
+      "mean_success_across_splits": 0.9499999999999998,
+      "std_success_across_splits": 1.1102230246251565e-16
+    },
+    {
+      "seed": 456,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.96,
+          "success_rate_std": 0.19595917942265423,
+          "success_rate_se": 0.019595917942265423,
+          "success_rate_ci_95_lower": 0.9215920008331597,
+          "success_rate_ci_95_upper": 0.9984079991668402,
+          "avg_steps_mean": 43.93,
+          "avg_steps_std": 34.128362105439514,
+          "avg_time_mean": 0.09706682920455932,
+          "avg_time_std": 0.07518709006124538,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9254385964912281
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.96,
+          "success_rate_std": 0.19595917942265423,
+          "success_rate_se": 0.019595917942265423,
+          "success_rate_ci_95_lower": 0.9215920008331597,
+          "success_rate_ci_95_upper": 0.9984079991668402,
+          "avg_steps_mean": 43.93,
+          "avg_steps_std": 34.128362105439514,
+          "avg_time_mean": 0.10175928115844726,
+          "avg_time_std": 0.1124695855106575,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9254385964912281
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.96,
+          "success_rate_std": 0.19595917942265423,
+          "success_rate_se": 0.019595917942265423,
+          "success_rate_ci_95_lower": 0.9215920008331597,
+          "success_rate_ci_95_upper": 0.9984079991668402,
+          "avg_steps_mean": 43.93,
+          "avg_steps_std": 34.128362105439514,
+          "avg_time_mean": 0.09170212268829346,
+          "avg_time_std": 0.07925258768013159,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9254385964912281
+        }
+      ],
+      "mean_success_across_splits": 0.96,
+      "std_success_across_splits": 0.0
+    },
+    {
+      "seed": 789,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.95,
+          "success_rate_std": 0.21794494717703375,
+          "success_rate_se": 0.021794494717703373,
+          "success_rate_ci_95_lower": 0.9072827903533014,
+          "success_rate_ci_95_upper": 0.9927172096466985,
+          "avg_steps_mean": 46.87,
+          "avg_steps_std": 37.44533482291219,
+          "avg_time_mean": 0.08704221963882447,
+          "avg_time_std": 0.06728102041789805,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9434697855750487
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.95,
+          "success_rate_std": 0.21794494717703375,
+          "success_rate_se": 0.021794494717703373,
+          "success_rate_ci_95_lower": 0.9072827903533014,
+          "success_rate_ci_95_upper": 0.9927172096466985,
+          "avg_steps_mean": 46.87,
+          "avg_steps_std": 37.44533482291219,
+          "avg_time_mean": 0.08336601495742797,
+          "avg_time_std": 0.06648828899328464,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9434697855750487
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.95,
+          "success_rate_std": 0.21794494717703375,
+          "success_rate_se": 0.021794494717703373,
+          "success_rate_ci_95_lower": 0.9072827903533014,
+          "success_rate_ci_95_upper": 0.9927172096466985,
+          "avg_steps_mean": 46.87,
+          "avg_steps_std": 37.44533482291219,
+          "avg_time_mean": 0.08807849884033203,
+          "avg_time_std": 0.0716223287605761,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            5,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9434697855750487
+        }
+      ],
+      "mean_success_across_splits": 0.9499999999999998,
+      "std_success_across_splits": 1.1102230246251565e-16
+    },
+    {
+      "seed": 1024,
+      "splits": [
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.99,
+          "success_rate_std": 0.09949874371066199,
+          "success_rate_se": 0.0099498743710662,
+          "success_rate_ci_95_lower": 0.9704982462327102,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 41.5,
+          "avg_steps_std": 27.159344616540363,
+          "avg_time_mean": 0.08474716901779175,
+          "avg_time_std": 0.05884253009792024,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "split_name": "standard",
+          "split_description": "In-distribution positions",
+          "phase_prediction_accuracy": 0.9232323232323232
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.99,
+          "success_rate_std": 0.09949874371066199,
+          "success_rate_se": 0.0099498743710662,
+          "success_rate_ci_95_lower": 0.9704982462327102,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 41.5,
+          "avg_steps_std": 27.159344616540363,
+          "avg_time_mean": 0.07752863168716431,
+          "avg_time_std": 0.05444662477522757,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "split_name": "extended",
+          "split_description": "Extended position range",
+          "phase_prediction_accuracy": 0.9232323232323232
+        },
+        {
+          "num_episodes": 100,
+          "success_rate_mean": 0.99,
+          "success_rate_std": 0.09949874371066199,
+          "success_rate_se": 0.0099498743710662,
+          "success_rate_ci_95_lower": 0.9704982462327102,
+          "success_rate_ci_95_upper": 1.0,
+          "avg_steps_mean": 41.5,
+          "avg_steps_std": 27.159344616540363,
+          "avg_time_mean": 0.07349835395812988,
+          "avg_time_std": 0.047855406766604304,
+          "avg_collisions": 0.0,
+          "grasp_success_rate": 0.0,
+          "failures_by_phase": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "split_name": "corners",
+          "split_description": "Corner positions (hard cases)",
+          "phase_prediction_accuracy": 0.9232323232323232
+        }
+      ],
+      "mean_success_across_splits": 0.9899999999999999,
+      "std_success_across_splits": 1.1102230246251565e-16
+    }
+  ]
+}

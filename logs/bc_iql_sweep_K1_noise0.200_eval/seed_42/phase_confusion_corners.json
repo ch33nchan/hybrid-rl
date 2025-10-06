@@ -1,0 +1,87 @@
+{
+  "confusion_matrix": [
+    [
+      10,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      83,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      6,
+      0,
+      193,
+      32,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      209,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "phase_names": [
+    "APPROACH",
+    "DESCEND",
+    "GRASP_SETTLE",
+    "LIFT",
+    "MOVE",
+    "FINE"
+  ],
+  "accuracy": 0.9269662921348315,
+  "per_phase_accuracy": [
+    {
+      "phase": "APPROACH",
+      "accuracy": 1.0
+    },
+    {
+      "phase": "DESCEND",
+      "accuracy": 0.9880952380952381
+    },
+    {
+      "phase": "GRASP_SETTLE",
+      "accuracy": 0.0
+    },
+    {
+      "phase": "LIFT",
+      "accuracy": 0.8354978354978355
+    },
+    {
+      "phase": "MOVE",
+      "accuracy": 1.0
+    },
+    {
+      "phase": "FINE",
+      "accuracy": 0.0
+    }
+  ]
+}

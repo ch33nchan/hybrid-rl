@@ -1,0 +1,186 @@
+{
+  "method": "bc_iql_sweep_K10_noise0.000",
+  "policy_ckpt": "models/ckpts_multitask_balanced_v5/multitask_policy_best.pt",
+  "qnet_ckpt": "models/ckpts_iql_balanced_v4/qnet.pt",
+  "use_critic": true,
+  "seed": 42,
+  "config": {
+    "baselines": {
+      "awac": {
+        "beta": 0.3,
+        "enabled": false,
+        "learning_rate": 0.0003
+      },
+      "cql": {
+        "alpha": 1.0,
+        "enabled": false,
+        "learning_rate": 0.0003
+      }
+    },
+    "bc": {
+      "batch_size": 64,
+      "batch_size_sweep": [
+        64,
+        128,
+        256
+      ],
+      "ema_decay": 0.02,
+      "epochs": 6,
+      "grad_clip": 1.0,
+      "hidden_dim": 256,
+      "learning_rate": 0.0003,
+      "learning_rate_sweep": [
+        0.0001,
+        0.0003,
+        0.001
+      ],
+      "loss_balance": true,
+      "lr_phase": 0.0001,
+      "num_phases": 6,
+      "phase_loss_weight": 0.3,
+      "phase_warmup_epochs": 2,
+      "sample_balance": true,
+      "weight_cap_ratio": 15.0
+    },
+    "checkpoint_dir": "models/checkpoints",
+    "critic_guidance": {
+      "min_adv_margin": 0.015,
+      "noise_scale_per_phase": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0
+      },
+      "noise_scale_sweep": [
+        0.0,
+        0.08,
+        0.15
+      ],
+      "num_candidates_per_phase": {
+        "0": 10,
+        "1": 10,
+        "2": 10,
+        "3": 10,
+        "4": 10,
+        "5": 10
+      },
+      "num_candidates_sweep": [
+        4,
+        10,
+        16
+      ]
+    },
+    "dataset": {
+      "max_samples": null,
+      "root": "data/raw/mj_pick_place_v5",
+      "train_split": 0.9,
+      "use_paraphrase": false,
+      "val_split": 0.1
+    },
+    "device": "auto",
+    "diffusion": {
+      "action_horizon": 8,
+      "action_horizon_sweep": [
+        8,
+        16
+      ],
+      "batch_size": 64,
+      "batch_size_sweep": [
+        64,
+        128,
+        256
+      ],
+      "ddim_steps": 25,
+      "ddim_steps_sweep": [
+        10,
+        25,
+        50
+      ],
+      "ema_decay": 0.995,
+      "epochs": 50,
+      "grad_clip": 1.0,
+      "gradient_accumulation_steps": 1,
+      "guidance_scale": 0.1,
+      "guidance_scale_sweep": [
+        0.0,
+        0.1,
+        0.3,
+        0.6,
+        1.0
+      ],
+      "learning_rate": 0.0001,
+      "learning_rate_sweep": [
+        0.0001,
+        0.0003
+      ],
+      "model_dim": 256,
+      "num_diffusion_steps": 100,
+      "time_dim": 128,
+      "use_amp": true
+    },
+    "environment": {
+      "max_steps": 160,
+      "render_height": 128,
+      "render_width": 128,
+      "success_lift_height": 0.105,
+      "success_xy_radius": 0.055,
+      "xml_path": "assets/models/pick_place_stable.xml"
+    },
+    "evaluation": {
+      "log_metrics": [
+        "success_rate",
+        "avg_steps",
+        "episode_time",
+        "collision_count",
+        "grasp_success",
+        "failure_by_phase"
+      ],
+      "num_episodes": 100,
+      "num_test_splits": 3,
+      "save_rollouts": true,
+      "save_videos": false
+    },
+    "experiment_name": "bc_iql_diffusion_comparison",
+    "iql": {
+      "batch_size": 256,
+      "epochs": 6,
+      "expectile": 0.7,
+      "expectile_sweep": [
+        0.6,
+        0.7,
+        0.8
+      ],
+      "gamma": 0.99,
+      "hidden_dim": 256,
+      "learning_rate": 0.0003,
+      "phase_balance": true,
+      "progress_reward": true,
+      "shaped_reward": true,
+      "twin": true
+    },
+    "log_dir": "logs",
+    "logging": {
+      "log_interval": 100,
+      "save_interval": 1,
+      "use_wandb": false,
+      "verbose": true,
+      "wandb_entity": null,
+      "wandb_project": "offline_rl_manipulation"
+    },
+    "random_seeds": [
+      42,
+      123,
+      456,
+      789,
+      1024
+    ],
+    "reproducibility": {
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "deterministic": true
+    },
+    "results_dir": "results"
+  }
+}

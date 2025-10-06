@@ -1,0 +1,58 @@
+{
+  "seed": 1024,
+  "splits": [
+    {
+      "num_episodes": 100,
+      "success_rate_mean": 1.0,
+      "success_rate_std": 0.0,
+      "success_rate_se": 0.0,
+      "success_rate_ci_95_lower": 1.0,
+      "success_rate_ci_95_upper": 1.0,
+      "avg_steps_mean": 39.25,
+      "avg_steps_std": 25.13339412017406,
+      "avg_time_mean": 0.14736899852752686,
+      "avg_time_std": 0.10526828509325914,
+      "avg_collisions": 0.0,
+      "grasp_success_rate": 0.0,
+      "split_name": "standard",
+      "split_description": "In-distribution positions",
+      "phase_prediction_accuracy": 0.8997555012224939
+    },
+    {
+      "num_episodes": 100,
+      "success_rate_mean": 1.0,
+      "success_rate_std": 0.0,
+      "success_rate_se": 0.0,
+      "success_rate_ci_95_lower": 1.0,
+      "success_rate_ci_95_upper": 1.0,
+      "avg_steps_mean": 39.25,
+      "avg_steps_std": 25.13339412017406,
+      "avg_time_mean": 0.14621567726135254,
+      "avg_time_std": 0.0987050714815315,
+      "avg_collisions": 0.0,
+      "grasp_success_rate": 0.0,
+      "split_name": "extended",
+      "split_description": "Extended position range",
+      "phase_prediction_accuracy": 0.8997555012224939
+    },
+    {
+      "num_episodes": 100,
+      "success_rate_mean": 1.0,
+      "success_rate_std": 0.0,
+      "success_rate_se": 0.0,
+      "success_rate_ci_95_lower": 1.0,
+      "success_rate_ci_95_upper": 1.0,
+      "avg_steps_mean": 39.25,
+      "avg_steps_std": 25.13339412017406,
+      "avg_time_mean": 0.15284537315368651,
+      "avg_time_std": 0.1005438388057762,
+      "avg_collisions": 0.0,
+      "grasp_success_rate": 0.0,
+      "split_name": "corners",
+      "split_description": "Corner positions (hard cases)",
+      "phase_prediction_accuracy": 0.8997555012224939
+    }
+  ],
+  "mean_success_across_splits": 1.0,
+  "std_success_across_splits": 0.0
+}

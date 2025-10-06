@@ -1,0 +1,190 @@
+{
+  "method": "bc_iql",
+  "policy_ckpt": "models/ckpts_multitask_balanced_v5/multitask_policy_best.pt",
+  "qnet_ckpt": "models/ckpts_iql_balanced_v4/qnet.pt",
+  "use_critic": true,
+  "seed": 123,
+  "config": {
+    "experiment_name": "bc_iql_diffusion_comparison",
+    "random_seeds": [
+      42,
+      123,
+      456,
+      789,
+      1024
+    ],
+    "device": "auto",
+    "log_dir": "logs",
+    "checkpoint_dir": "models/checkpoints",
+    "results_dir": "results",
+    "dataset": {
+      "root": "data/raw/mj_pick_place_v5",
+      "train_split": 0.9,
+      "val_split": 0.1,
+      "use_paraphrase": false,
+      "max_samples": null
+    },
+    "environment": {
+      "xml_path": "assets/models/pick_place_stable.xml",
+      "render_width": 128,
+      "render_height": 128,
+      "max_steps": 160,
+      "success_lift_height": 0.105,
+      "success_xy_radius": 0.055
+    },
+    "evaluation": {
+      "num_episodes": 100,
+      "num_test_splits": 3,
+      "log_metrics": [
+        "success_rate",
+        "avg_steps",
+        "episode_time",
+        "collision_count",
+        "grasp_success",
+        "failure_by_phase"
+      ],
+      "save_rollouts": true,
+      "save_videos": false
+    },
+    "bc": {
+      "hidden_dim": 256,
+      "num_phases": 6,
+      "learning_rate_sweep": [
+        0.0001,
+        0.0003,
+        0.001
+      ],
+      "learning_rate": 0.0003,
+      "lr_phase": 0.0001,
+      "batch_size_sweep": [
+        64,
+        128,
+        256
+      ],
+      "batch_size": 64,
+      "epochs": 6,
+      "phase_loss_weight": 0.3,
+      "phase_warmup_epochs": 2,
+      "grad_clip": 1.0,
+      "sample_balance": true,
+      "loss_balance": true,
+      "weight_cap_ratio": 15.0,
+      "ema_decay": 0.02
+    },
+    "iql": {
+      "hidden_dim": 256,
+      "twin": true,
+      "expectile_sweep": [
+        0.6,
+        0.7,
+        0.8
+      ],
+      "expectile": 0.7,
+      "learning_rate": 0.0003,
+      "batch_size": 256,
+      "epochs": 6,
+      "gamma": 0.99,
+      "shaped_reward": true,
+      "progress_reward": true,
+      "phase_balance": true
+    },
+    "critic_guidance": {
+      "num_candidates_per_phase": {
+        "0": 1,
+        "1": 4,
+        "2": 6,
+        "3": 6,
+        "4": 10,
+        "5": 14
+      },
+      "noise_scale_per_phase": {
+        "0": 0.0,
+        "1": 0.05,
+        "2": 0.08,
+        "3": 0.08,
+        "4": 0.1,
+        "5": 0.12
+      },
+      "min_adv_margin": 0.015,
+      "num_candidates_sweep": [
+        1,
+        4,
+        8,
+        16,
+        32
+      ],
+      "noise_scale_sweep": [
+        0.0,
+        0.05,
+        0.1,
+        0.15,
+        0.2
+      ]
+    },
+    "diffusion": {
+      "model_dim": 256,
+      "time_dim": 128,
+      "action_horizon": 8,
+      "action_horizon_sweep": [
+        8,
+        16
+      ],
+      "num_diffusion_steps": 100,
+      "learning_rate": 0.0001,
+      "learning_rate_sweep": [
+        0.0001,
+        0.0003
+      ],
+      "batch_size": 64,
+      "batch_size_sweep": [
+        64,
+        128,
+        256
+      ],
+      "epochs": 50,
+      "grad_clip": 1.0,
+      "ema_decay": 0.995,
+      "ddim_steps": 25,
+      "ddim_steps_sweep": [
+        10,
+        25,
+        50
+      ],
+      "guidance_scale": 0.1,
+      "guidance_scale_sweep": [
+        0.0,
+        0.1,
+        0.3,
+        0.6,
+        1.0
+      ],
+      "use_amp": true,
+      "gradient_accumulation_steps": 1
+    },
+    "baselines": {
+      "cql": {
+        "enabled": false,
+        "alpha": 1.0,
+        "learning_rate": 0.0003
+      },
+      "awac": {
+        "enabled": false,
+        "beta": 0.3,
+        "learning_rate": 0.0003
+      }
+    },
+    "logging": {
+      "use_wandb": false,
+      "wandb_project": "offline_rl_manipulation",
+      "wandb_entity": null,
+      "log_interval": 100,
+      "save_interval": 1,
+      "verbose": true
+    },
+    "reproducibility": {
+      "deterministic": true,
+      "cudnn_deterministic": true,
+      "cudnn_benchmark": false
+    }
+  }
+}

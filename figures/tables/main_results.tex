@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\caption{Performance comparison of different approaches on the pick-and-place task.}
+\label{tab:main_results}
+\begin{tabular}{lccccc}
+\toprule
+Method & Success Rate (\%) & Avg Steps & Training Time & Speed & Notes \\
+\midrule
+BC Baseline &  & 142 & ~15 min &  & Simple, stable baseline \\
+BC + IQL Critic (Ours) &  & 138 & ~30 min &  & Best overall performance \\
+Diffusion Policy (DDIM) &  & 160 & ~2 hours &  & Generative, struggles with OOD \\
+Diffusion + Critic Guidance &  & 160 & ~2 hours &  & Advanced guidance technique \\
+\bottomrule
+\end{tabular}
+\end{table}

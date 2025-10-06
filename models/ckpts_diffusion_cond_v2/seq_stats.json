@@ -1,7 +1,0 @@
-{
-  "samples": 33999,
-  "horizon": 6,
-  "seq_dim": 24,
-  "state_dim": 9,
-  "timesteps": 200
-}

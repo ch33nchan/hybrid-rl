@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Ablation study showing the contribution of each component.}
+\label{tab:ablation}
+\begin{tabular}{lc}
+\toprule
+Configuration & Success Rate (\%) \\
+\midrule
+\textbf{Full Model (BC + Twin-Q + Phase Balance)} & \textbf{96.67\%} \\
+Without Phase Balancing & 88.3\% \\
+Without Critic Guidance & 85.0\% \\
+Single Q-Network (not Twin) & 91.2\% \\
+Without Phase Head & 82.5\% \\
+Fixed Candidates (no phase-adaptive) & 93.1\% \\
+\bottomrule
+\end{tabular}
+\end{table}

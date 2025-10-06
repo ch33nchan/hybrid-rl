@@ -2,6 +2,7 @@ import argparse, torch, numpy as np
 from envs.mj_pick_place_env import MjPickPlaceEnv, MjPickPlaceConfig
 from utils.phase_labeling import label_phase
 import torch.nn as nn
+from tqdm import tqdm
 
 class SinusoidalTimeEmbedding(nn.Module):
     def __init__(self, dim): super().__init__(); self.dim=dim
@@ -77,7 +78,8 @@ def run(a):
     horizon=ckpt["horizon"]
     env=MjPickPlaceEnv(MjPickPlaceConfig(seed=a.seed))
     successes=0
-    for ep in range(a.episodes):
+    progress=tqdm(range(a.episodes), desc="eval episodes", unit="ep")
+    for ep in progress:
         obs=env.reset(); steps=0; plan=[]
         while True:
             st=obs["state"]
@@ -95,6 +97,7 @@ def run(a):
                 print(f"Episode {ep} success={info['success']} steps={steps}")
                 successes+=int(info["success"])
                 break
+        progress.set_postfix({"success_rate": f"{successes/(ep+1)*100:.2f}%"})
         if (ep+1)%a.print_every==0:
             print(f"Interim SR: {successes/(ep+1)*100:.2f}%")
     env.close()

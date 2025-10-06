@@ -1,6 +1,0 @@
-{
-  "horizon": 8,
-  "seq_dim": 32,
-  "state_dim": 9,
-  "timesteps": 200
-}
